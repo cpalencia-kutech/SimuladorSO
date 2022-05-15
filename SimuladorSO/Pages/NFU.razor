@@ -1,5 +1,5 @@
-﻿@page "/LRU"
-<h3>Algoritmo LRU (Last Reference Use) </h3>
+﻿@page "/NFU"
+<h3>Algoritmo NFU (Not Reference Use) </h3>
 @if (@Error)
 {
     <div class="alert alert-danger" role="alert">
@@ -85,7 +85,8 @@
                             <tr class="text-center badge-light">
                                 <th>Página</th>
                                 <th>Tarea</th>
-                                <th>Tiempo</th>
+                                <th>Refenciada</th>
+                                <th>Contador</th>
                             </tr>
                         </thead>
                         <tbody>
@@ -96,10 +97,12 @@
                                     @if (MainMemory.Exists(x => x.page == pageNumber))
                                     {
                                         <td>@MainMemory.Where(x => x.page == pageNumber).FirstOrDefault().name</td>
-                                        <td class="text-center">@Convert.ToInt32(MainMemory.Where(x => x.page == pageNumber).FirstOrDefault().time)</td>
+                                        <td class="text-center">@Convert.ToInt32(MainMemory.Where(x => x.page == pageNumber).FirstOrDefault().referenced)</td>
+                                        <td>@MainMemory.Where(x => x.page == pageNumber).FirstOrDefault().counter</td>
                                     }
                                     else
                                     {
+                                        <td></td>
                                         <td></td>
                                         <td></td>
                                     }
@@ -120,7 +123,8 @@
                         <thead>
                             <tr class="text-center badge-light">
                                 <th>Tarea</th>
-                                <th>Tiempo</th>
+                                <th>Rerenciada</th>
+                                <th>Contador</th>
                             </tr>
                         </thead>
                         <tbody>
@@ -128,7 +132,8 @@
                             {
                                 <tr>
                                     <td>@task.name</td>
-                                    <td class="text-center">@Convert.ToInt32(task.time)</td>
+                                    <td class="text-center">@Convert.ToInt32(task.referenced)</td>
+                                    <td>@task.counter </td>
                                 </tr>
                             }
                         </tbody>
@@ -152,9 +157,13 @@
         public string name { get; set; }
         public int page { get; set; }
         public int time { get; set; }
+        public bool referenced { get; set; }
+        public int counter { get; set; }
 
         public Process()
         {
+            this.referenced = true;
+            this.counter = 1;
         }
     }
 
@@ -177,7 +186,12 @@
         if (!string.IsNullOrEmpty(ProcessName))
         {
             // Se valida si existe un proceso en memoria principal
-            if (!MainMemory.Exists(x => x.name.ToLower() == ProcessName.Trim().ToLower()))
+            if (MainMemory.Exists(x => x.name.ToLower() == ProcessName.Trim().ToLower()))
+            {
+                MainMemory.Where(x => x.name.ToLower() == ProcessName.Trim().ToLower()).FirstOrDefault().referenced = true;
+                MainMemory.Where(x => x.name.ToLower() == ProcessName.Trim().ToLower()).FirstOrDefault().counter++;
+            }
+            else
             {
                 var maxPageOcupped = this.MainMemory.Count == 0 ? 0 : this.MainMemory.Max(x => x.page);
                 var assignPage = 0;
@@ -193,6 +207,7 @@
                     addTask = VirtualMemory.Where(x => x.name.ToLower() == ProcessName.Trim().ToLower()).FirstOrDefault();
                     addTask.page = assignPage;
                     addTask.time = TimeScale;
+                    addTask.counter++;
 
                     // Se elimina de la memoria virtual
                     VirtualMemory.Remove(addTask);
@@ -211,6 +226,10 @@
             }
 
             ProcessName = String.Empty;
+
+            // Se realiza el reset de las referencias
+            if ((TimeScale % PagesNumber) == 0)
+                ResetReference();
 
             TimeScale++;
         }
@@ -263,8 +282,8 @@
 
     private int ApplyReplacePolitic()
     {
-        int minTime = this.MainMemory.Count == 0 ? 1 : this.MainMemory.Min(x => x.time);
-        var replaceTask = this.MainMemory.Where(x => x.time == minTime).FirstOrDefault();
+        int minCounter = this.MainMemory.Count == 0 ? 1 : this.MainMemory.Min(x => x.counter);
+        var replaceTask = this.MainMemory.Where(x => x.counter == minCounter).FirstOrDefault();
         var pageAssigned = replaceTask.page;
 
         VirtualMemory.Add(replaceTask);
@@ -272,5 +291,13 @@
 
         return pageAssigned;
     }
-    
+
+    private void ResetReference()
+    {
+        foreach (var task in MainMemory)
+        {
+            task.referenced = false;
+        }
+    }
+
 }
