@@ -1,7 +1,6 @@
 ﻿@page "/NRU"
 
 <h3>Algoritmo NRU (Not Recent Use) </h3>
-<h3>Parametros</h3>
 @if (@Error)
 {
     <div class="alert alert-danger" role="alert">
@@ -9,6 +8,25 @@
     </div>
 }
 
+<div class="row">
+    <div class="offset-md-4 col-md-4">
+        <div class="table-responsive">
+            <h3>Resumen</h3>
+            <table class="table table-borderless table-hover table-striped">
+                <tbody>
+                    <tr>
+                        <td>Tiempo</td>
+                        <td>@TimeScale</td>
+                    </tr>
+                    <tr>
+                        <td>Paginas</td>
+                        <td>@PagesNumber</td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
 <div class="row">
     <div class="col-md-6">
         <div class="card shadow">
@@ -19,6 +37,21 @@
                         <div class="form-group">
                             <label>Proceso</label>
                             <input id="txtProceso" @bind-value="ProcessName" class="form-control" />
+                        </div>
+                    </div>
+                    <div class="col-6">
+                        <div class="form-group">
+                            <label>Modificado</label>
+                            <div class="form-check form-switch">
+                                @if (ModifiedProcess)
+                                {
+                                    <input @bind-value="ModifiedProcess" class="form-check-input" type="checkbox" id="flexSwitchCheckChecked" checked>
+                                }
+                                else
+                                {
+                                    <input @bind-value="ModifiedProcess" class="form-check-input" type="checkbox" id="flexSwitchCheckChecked">
+                                }
+                            </div>
                         </div>
                     </div>
                 </div>
@@ -56,101 +89,73 @@
         </div>
     </div>
 </div>
-<div class="row">
-    <div class="col-md-6">
-        <div class="table-responsive">
-            <h3>Resumen</h3>
-            <table class="table table-borderless table-hover table-striped">
-                <tbody>
-                    <tr>
-                        <td>Tiempo</td>
-                        <td>@TimeScale</td>
-                    </tr>
-                    <tr>
-                        <td>Paginas</td>
-                        <td>@PagesNumber</td>
-                    </tr>
-                </tbody>
-            </table>
-        </div>
-    </div>
-</div>
+<br />
 <div class="row">
     <div class="col-6">
-        <h2>Memoria Principal</h2>
-        <div class="table-responsive">
-            <table class="table table-borderless table-striped table-hover">
-                <thead>
-                    <tr>
-                        <th>Página</th>
-                        <th>Tarea</th>
-                        <th>Referenciado</th>
-                        <th>Modificado</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    @for (var pageNumber = 1; pageNumber <= PagesNumber; pageNumber++)
-                    {
-                        <tr>
-                            <td>Página @pageNumber</td>
-                            @if (MainMemory.Exists(x => x.page == pageNumber))
-                            {
-                                <td>@MainMemory.Where(x => x.page == pageNumber).FirstOrDefault().name</td>
-                                <td>@Convert.ToInt32(MainMemory.Where(x => x.page == pageNumber).FirstOrDefault().referenced)</td>
-                                <td>@Convert.ToInt32(MainMemory.Where(x => x.page == pageNumber).FirstOrDefault().modified)</td>
-                            }
-                            else
-                            {
-                                <td></td>
-                                <td></td>
-                                <td></td>
-                            }
-                        </tr>
-                    }
-                </tbody>
-            </table>
-        </div>
-    </div>
-    <div class="col-6">
-        <h2>Memoria Virtual</h2>
-        <div class="table-responsive">
-            <table class="table table-borderless table-striped table-hover">
-                <thead>
-                    <tr>
-                        <th>Tarea</th>
-                        <th>Referenciado</th>
-                        <th>Modificado</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    @foreach (var task in VirtualMemory)
-                    {
-                        <tr>
-                            <td>@task.name</td>
-                            <td>@Convert.ToInt32(task.referenced)</td>
-                            <td>@Convert.ToInt32(task.modified)</td>
-                        </tr>
-                    }
-                    @*@for (var pageNumber = 1; pageNumber <= PagesNumber; pageNumber++)
-                        {
-                            <tr>
-                                <td>Página @pageNumber</td>
-                                @if (VirtualMemory.Exists(x => x.page == pageNumber))
-                                {
-                                    <td>@VirtualMemory.Where(x => x.page == pageNumber).FirstOrDefault().name</td>
-                                    <td>@Convert.ToInt32(VirtualMemory.Where(x => x.page == pageNumber).FirstOrDefault().referenced)</td>
-                                    <td>@Convert.ToInt32(VirtualMemory.Where(x => x.page == pageNumber).FirstOrDefault().modified)</td>
-                                }
-                                else
-                                {
-                                    <td></td>
-                                    <td></td>
-                                    <td></td>
-                                }
+        <div class="card shadow">
+            <h2 class="card-header text-center badge-primary">Memoria Principal</h2>
+            <div class="card-body">
+                <div class="table-responsive">
+                    <table class="table table-borderless table-striped table-hover">
+                        <thead>
+                            <tr class="text-center badge-light">
+                                <th>Página</th>
+                                <th>Tarea</th>
+                                <th>Referenciado</th>
+                                <th>Modificado</th>
                             </tr>
-                        }*@
-                </tbody>
-            </table>
+                        </thead>
+                        <tbody>
+                            @for (var pageNumber = 1; pageNumber <= PagesNumber; pageNumber++)
+                            {
+                                <tr>
+                                    <td>Página @pageNumber</td>
+                                    @if (MainMemory.Exists(x => x.page == pageNumber))
+                                    {
+                                        <td>@MainMemory.Where(x => x.page == pageNumber).FirstOrDefault().name</td>
+                                        <td class="text-center">@Convert.ToInt32(MainMemory.Where(x => x.page == pageNumber).FirstOrDefault().referenced)</td>
+                                        <td class="text-center">@Convert.ToInt32(MainMemory.Where(x => x.page == pageNumber).FirstOrDefault().modified)</td>
+                                    }
+                                    else
+                                    {
+                                        <td></td>
+                                        <td></td>
+                                        <td></td>
+                                    }
+                                </tr>
+                            }
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="col-6">
+        <div class="card shadow">
+            <h2 class="card-header text-center badge-secondary">Memoria Virtual</h2>
+            <div class="card-body">
+                <div class="table-responsive">
+                    <table class="table table-borderless table-striped table-hover">
+                        <thead>
+                            <tr class="text-center badge-light">
+                                <th>Tarea</th>
+                                <th>Referenciado</th>
+                                <th>Modificado</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @foreach (var task in VirtualMemory)
+                            {
+                                <tr>
+                                    <td>@task.name</td>
+                                    <td class="text-center">@Convert.ToInt32(task.referenced)</td>
+                                    <td class="text-center">@Convert.ToInt32(task.modified)</td>
+                                </tr>
+                            }
+                        </tbody>
+                    </table>
+                </div>
+            </div>
         </div>
     </div>
 </div>
@@ -158,13 +163,11 @@
 @code {
 
     public string ProcessName { get; set; }
+    public bool ModifiedProcess { get; set; }
     public int TimeScale { get; set; }
     public int PagesNumber { get; set; }
     public bool Error { get; set; }
     public string Message { get; set; }
-    //public int MaxTime { get; set; }
-
-    //public Process[,] MainMemory { get; set; }
 
     public class Process
     {
@@ -188,9 +191,8 @@
         base.OnInitialized();
         this.TimeScale = 1;
         this.PagesNumber = 10;
-        //this.MaxTime = 10;
+        this.ModifiedProcess = false;
         this.MainMemory = new List<Process>();
-        //this.MainMemory = new Process[PagesNumber,TimeScale];
         this.VirtualMemory = new List<Process>();
     }
 
@@ -219,7 +221,7 @@
                 if (VirtualMemory.Exists(x => x.name.ToLower() == ProcessName.Trim().ToLower()))
                 {
                     addTask = VirtualMemory.Where(x => x.name.ToLower() == ProcessName.Trim().ToLower()).FirstOrDefault();
-                    addTask.modified = true;
+                    addTask.modified = ModifiedProcess;
                     addTask.referenced = true;
                     addTask.page = assignPage;
 
@@ -233,6 +235,7 @@
                         name = ProcessName.Trim().ToLower(),
                         time = TimeScale,
                         page = assignPage,
+                        modified = ModifiedProcess
                     };
                 }
 
@@ -246,6 +249,7 @@
                 ResetReference();
 
             TimeScale++;
+            this.ModifiedProcess = false;
         }
         else
         {
