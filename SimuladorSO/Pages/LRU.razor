@@ -1,0 +1,276 @@
+﻿@page "/LRU"
+<h3>Algoritmo LRU (Last Reference Use) </h3>
+@if (@Error)
+{
+    <div class="alert alert-danger" role="alert">
+        @Message
+    </div>
+}
+
+<div class="row">
+    <div class="offset-md-4 col-md-4">
+        <div class="table-responsive">
+            <h3>Resumen</h3>
+            <table class="table table-borderless table-hover table-striped">
+                <tbody>
+                    <tr>
+                        <td>Tiempo</td>
+                        <td>@TimeScale</td>
+                    </tr>
+                    <tr>
+                        <td>Paginas</td>
+                        <td>@PagesNumber</td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+<div class="row">
+    <div class="col-md-6">
+        <div class="card shadow">
+            <div class="card-header">Procesos</div>
+            <div class="card-body">
+                <div class="row">
+                    <div class="col-6">
+                        <div class="form-group">
+                            <label>Proceso</label>
+                            <input id="txtProceso" @bind-value="ProcessName" class="form-control" />
+                        </div>
+                    </div>
+                </div>
+                <div class="row">
+                    <div class="col-6">
+                        <div class="form-group">
+                            <button id="btnAgregar" class="btn btn-success" @onclick="AddProcess">Agregar Proceso</button>
+                            <button id="btnAgregar" class="btn btn-danger" @onclick="DeleteProcess">Eliminar Proceso</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-6">
+        <div class="card shadow">
+            <div class="card-header">Paginación</div>
+            <div class="card-body">
+                <div class="row">
+                    <div class="col-6">
+                        <div class="form-group">
+                            <label>No. Paginas</label>
+                            <input id="txtPaginas" @bind-value="PagesNumber" class="form-control" />
+                        </div>
+                    </div>
+                </div>
+                <div class="row">
+                    <div class="col-6">
+                        <div class="form-group">
+                            <button id="btnAgregar" class="btn btn-success" @onclick="ChangePageNumber">Cambiar Paginación</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+<br />
+<div class="row">
+    <div class="col-6">
+        <div class="card shadow">
+            <h2 class="card-header text-center badge-primary">Memoria Principal</h2>
+            <div class="card-body">
+                <div class="table-responsive">
+                    <table class="table table-borderless table-striped table-hover">
+                        <thead>
+                            <tr class="text-center badge-light">
+                                <th>Página</th>
+                                <th>Tarea</th>
+                                <th>Tiempo</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @for (var pageNumber = 1; pageNumber <= PagesNumber; pageNumber++)
+                            {
+                                <tr>
+                                    <td>Página @pageNumber</td>
+                                    @if (MainMemory.Exists(x => x.page == pageNumber))
+                                    {
+                                        <td>@MainMemory.Where(x => x.page == pageNumber).FirstOrDefault().name</td>
+                                        <td class="text-center">@Convert.ToInt32(MainMemory.Where(x => x.page == pageNumber).FirstOrDefault().time)</td>
+                                    }
+                                    else
+                                    {
+                                        <td></td>
+                                        <td></td>
+                                    }
+                                </tr>
+                            }
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="col-6">
+        <div class="card shadow">
+            <h2 class="card-header text-center badge-secondary">Memoria Virtual</h2>
+            <div class="card-body">
+                <div class="table-responsive">
+                    <table class="table table-borderless table-striped table-hover">
+                        <thead>
+                            <tr class="text-center badge-light">
+                                <th>Tarea</th>
+                                <th>Tiempo</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @foreach (var task in VirtualMemory)
+                            {
+                                <tr>
+                                    <td>@task.name</td>
+                                    <td class="text-center">@Convert.ToInt32(task.time)</td>
+                                </tr>
+                            }
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+@code {
+
+    public string ProcessName { get; set; }
+    public int TimeScale { get; set; }
+    public int PagesNumber { get; set; }
+    public bool Error { get; set; }
+    public string Message { get; set; }
+
+    public class Process
+    {
+        public string name { get; set; }
+        public int page { get; set; }
+        public int time { get; set; }
+
+        public Process()
+        {
+        }
+    }
+
+    public List<Process> MainMemory { get; set; }
+    public List<Process> VirtualMemory { get; set; }
+
+    protected override void OnInitialized()
+    {
+        base.OnInitialized();
+        this.TimeScale = 1;
+        this.PagesNumber = 10;
+        this.MainMemory = new List<Process>();
+        this.VirtualMemory = new List<Process>();
+    }
+
+    private void AddProcess()
+    {
+        this.Error = false; this.Message = string.Empty;
+
+        if (!string.IsNullOrEmpty(ProcessName))
+        {
+            // Se valida si existe un proceso en memoria principal
+            if (!MainMemory.Exists(x => x.name.ToLower() == ProcessName.Trim().ToLower()))
+            {
+                var maxPageOcupped = this.MainMemory.Count == 0 ? 0 : this.MainMemory.Max(x => x.page);
+                var assignPage = 0;
+                Process addTask;
+
+                if (maxPageOcupped < PagesNumber)
+                    assignPage = maxPageOcupped + 1;
+                else
+                    assignPage = this.ApplyReplacePolitic();
+
+                if (VirtualMemory.Exists(x => x.name.ToLower() == ProcessName.Trim().ToLower()))
+                {
+                    addTask = VirtualMemory.Where(x => x.name.ToLower() == ProcessName.Trim().ToLower()).FirstOrDefault();
+                    addTask.page = assignPage;
+                    addTask.time = TimeScale;
+
+                    // Se elimina de la memoria virtual
+                    VirtualMemory.Remove(addTask);
+                }
+                else
+                {
+                    addTask = new Process()
+                    {
+                        name = ProcessName.Trim().ToLower(),
+                        time = TimeScale,
+                        page = assignPage,
+                    };
+                }
+
+                MainMemory.Add(addTask);
+            }
+
+            ProcessName = String.Empty;
+
+            TimeScale++;
+        }
+        else
+        {
+            this.Error = true;
+            this.Message = "Debe ingresar el nombre del proceso";
+        }
+    }
+
+    private void DeleteProcess()
+    {
+        this.Error = false; this.Message = string.Empty;
+
+        if (!string.IsNullOrEmpty(ProcessName))
+        {
+            Process deleteProcess = null;
+
+            if (this.MainMemory.Exists(x => x.name.ToLower() == ProcessName.Trim().ToLower()))
+            {
+                deleteProcess = this.MainMemory.Where(x => x.name.ToLower() == ProcessName.Trim().ToLower()).FirstOrDefault();
+                this.MainMemory.Remove(deleteProcess);
+            }
+
+            if (this.VirtualMemory.Exists(x => x.name.ToLower() == ProcessName.Trim().ToLower()))
+            {
+                deleteProcess = this.VirtualMemory.Where(x => x.name.ToLower() == ProcessName.Trim().ToLower()).FirstOrDefault();
+                this.VirtualMemory.Remove(deleteProcess);
+            }
+
+            if (deleteProcess == null)
+            {
+                this.Error = true;
+                this.Message = "No se ha encontrado el proceso indicado";
+            }
+        }
+        else
+        {
+            this.Error = true;
+            this.Message = "Debe ingresar el nombre del proceso";
+        }
+    }
+
+    private void ChangePageNumber()
+    {
+        this.MainMemory = new List<Process>();
+        this.VirtualMemory = new List<Process>();
+        this.TimeScale = 1;
+    }
+
+    private int ApplyReplacePolitic()
+    {
+        int minTime = this.MainMemory.Count == 0 ? 1 : this.MainMemory.Min(x => x.time);
+        var replaceTask = this.MainMemory.Where(x => x.time == minTime).FirstOrDefault();
+        var pageAssigned = replaceTask.page;
+
+        VirtualMemory.Add(replaceTask);
+        MainMemory.Remove(replaceTask);
+
+        return pageAssigned;
+    }
+    
+}
