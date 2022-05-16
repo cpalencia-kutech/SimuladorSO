@@ -1,16 +1,192 @@
 ﻿@page "/clock"
 
-<h1>Counter</h1>
-
-<p>Current count: @currentCount</p>
-
-<button class="btn btn-primary" @onclick="IncrementCount">Click me</button>
+@using SimuladorSO.Data;
+<h1>Simulador de Memoria Virtual(RELOJ)</h1>
+<div class="row">
+    <div class="col-6">
+        <div class="card shadow">
+            <div class="card-header">
+                <div class="card-title">
+                    Agregar Proceso
+                </div>
+            </div>
+            <div class="card-body">
+                <div class="row">
+                    <div class="col-12">
+                        <div class="form-group">
+                            <label>Nombre</label>
+                            <input type="text" @bind="procName" class="form-control" />
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="card-footer">
+                <button class="btn btn-primary float-right" @onclick="addProcess">Agregar</button>
+            </div>
+        </div>
+    </div>
+    <div class="col-6"></div>
+</div>
+<br />
+<div class="row">
+    <div class="col-6">
+        <div class="card shadow">
+            <div class="card-header">
+                <div class="card-title">
+                    <div class="row">
+                        <div class="col-10">
+                            <h4>Memoria RAM</h4>
+                        </div>
+                        <div class="col-2">
+                            <small># de paginas</small>
+                            <div class="input-group">
+                                <button type="button" class="btn btn-sm btn-primary" @onclick="disminuirPagRam">-</button>
+                                <input class="form-control" @bind="pagRam" readonly />
+                                <button type="button" class="btn btn-sm btn-primary" @onclick="AumentarPagRam">+</button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="card-body">
+                <table class="table table-bordered table-hover table-striped table-sm">
+                    <thead>
+                        <tr>
+                            <th>Id</th>
+                            <th>Proceso</th>
+                            <th>Estado</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach (var proc in procRam)
+                        {
+                            <tr>
+                                <td>@proc.Id</td>
+                                <td>@proc.Name</td>
+                                <td>@proc.State</td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+    <div class="col-6">
+        <div class="card shadow">
+            <div class="card-header">
+                <div class="card-title">
+                    <div class="row">
+                        <div class="col-10">
+                            <h4>Memoria Virtual</h4>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="card-body">
+                <table class="table table-bordered table-hover table-striped table-sm">
+                    <thead>
+                        <tr>
+                            <th>Id</th>
+                            <th>Proceso</th>
+                            <th>Estado</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach (var proc in procVirtual)
+                        {
+                            <tr>
+                                <td>@proc.Id</td>
+                                <td>@proc.Name</td>
+                                <td>@proc.State</td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
 
 @code {
-    private int currentCount = 0;
 
-    private void IncrementCount()
+    private List<Proceso> procRam = new List<Proceso>();
+    private List<Proceso> procVirtual = new List<Proceso>();
+
+    private string procName;
+    private int procSize;
+    private int pagRam = 10;
+    private int pagVirtual = 10;
+    private int currentCount = 0;
+    private int maxCount = 5;
+
+    private void addProcess()
     {
         currentCount++;
+        if (currentCount==maxCount)
+        {
+            procRam.ForEach(m => m.State =0);
+            currentCount=0;
+        }
+        if (procRam.Count+1 <= pagRam)
+        {
+            if (procRam.Where(m => m.Name == procName.Trim().ToUpper()).Count()==0)
+            {
+                procRam.Add(new Proceso()
+                {
+                    Id = procRam.Count+ 1,
+                    Name = procName,
+                    State = 1
+                });
+            }
+        }
+        else
+        {
+            if (procRam.Where(m => m.Name == procName.Trim().ToUpper()).Count()==0)
+            {
+                if (procVirtual.Where(m => m.Name == procName.Trim().ToUpper()).Count()==0)
+                {
+                    procVirtual.Add(new Proceso()
+                    {
+                        Id= procVirtual.Count + 1,
+                        Name = procRam.Where(m => m.StartDate == procRam.Min(m => m.StartDate)).First().Name,
+                        State = 1
+                    });
+                    procRam.Where(m => m.State == 0).First().Name = procName;
+                    procRam.Where(m => m.State == 0).First().StartDate = DateTime.Now;
+                    procRam.Where(m => m.State == 0).First().State = 1;
+                }
+                else
+                {
+                    procVirtual.Where(m => m.Name == procName.Trim().ToUpper()).First().Name = procRam.Where(m => m.StartDate == procRam.Min(m => m.StartDate)).First().Name;
+                    procVirtual.Where(m => m.Name == procName.Trim().ToUpper()).First().StartDate = procRam.Where(m => m.StartDate == procRam.Min(m => m.StartDate)).First().StartDate;
+                    procRam.Where(m => m.StartDate == procRam.Min(m => m.StartDate)).First().Name = procName;
+                    procRam.Where(m => m.StartDate == procRam.Min(m => m.StartDate)).First().StartDate = DateTime.Now;
+                }
+            }
+
+        }
+        procName = "";
+    }
+    public void disminuirPagRam()
+    {
+        if (pagRam>0 && pagRam>procRam.Count)
+        {
+            pagRam--;
+        }
+    }
+    public void disminuirPagVirtual()
+    {
+        if (pagVirtual>0 && pagVirtual>procVirtual.Count)
+        {
+            pagVirtual--;
+        }
+    }
+    public void AumentarPagRam()
+    {
+        pagRam++;
+    }
+    public void AumentarPagVirtual()
+    {
+        pagVirtual++;
     }
 }

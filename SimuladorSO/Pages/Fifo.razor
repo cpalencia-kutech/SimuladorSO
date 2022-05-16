@@ -3,7 +3,7 @@
 <h1>Simulador de Memoria Virtual(FIFO)</h1>
 <div class="row">
     <div class="col-6">
-        <div class="card">
+        <div class="card shadow">
             <div class="card-header">
                 <div class="card-title">
                     Agregar Proceso
@@ -29,7 +29,7 @@
 <br />
 <div class="row">
     <div class="col-6">
-        <div class="card">
+        <div class="card shadow">
             <div class="card-header">
                 <div class="card-title">
                     <div class="row">
@@ -71,20 +71,12 @@
         </div>
     </div>
     <div class="col-6">
-        <div class="card">
+        <div class="card shadow">
             <div class="card-header">
                 <div class="card-title">
                     <div class="row">
                         <div class="col-10">
                             <h4>Memoria Virtual</h4>
-                        </div>
-                        <div class="col-2">
-                            <small># de paginas</small>
-                            <div class="input-group">
-                                <button type="button" class="btn btn-sm btn-primary" @onclick="disminuirPagVirtual">-</button>
-                                <input class="form-control" @bind="pagVirtual" readonly />
-                                <button type="button" class="btn btn-sm btn-primary" @onclick="AumentarPagVirtual">+</button>
-                            </div>
                         </div>
                     </div>
                 </div>
@@ -128,25 +120,38 @@
     {
         if(procRam.Count+1 <= pagRam)
         {
-            procRam.Add(new Proceso()
+            if(procRam.Where(m=>m.Name == procName.Trim().ToUpper()).Count()==0)
             {
-                Id = procRam.Count+ 1,
-                Name = procName,
-                Size = procSize,
-                StartDate = DateTime.Now
-            });
+                procRam.Add(new Proceso()
+                {
+                    Id = procRam.Count+ 1,
+                    Name = procName,
+                    StartDate = DateTime.Now
+                });
+            }
         }
         else
         {
-            procVirtual.Add(new Proceso()
-            {
-                Id= procVirtual.Count + 1,
-                Name = procRam.Where(m => m.StartDate == procRam.Min(m => m.StartDate)).First().Name,
-                Size = 0,
-                StartDate = procRam.Min(m => m.StartDate)
-            });
-            procRam.Where(m => m.StartDate == procRam.Min(m => m.StartDate)).First().Name = procName;
-            procRam.Where(m => m.StartDate == procRam.Min(m => m.StartDate)).First().StartDate = DateTime.Now;
+            if (procRam.Where(m => m.Name == procName.Trim().ToUpper()).Count()==0) {
+                if(procVirtual.Where(m => m.Name == procName.Trim().ToUpper()).Count()==0){
+                    procVirtual.Add(new Proceso()
+                    {
+                        Id= procVirtual.Count + 1,
+                        Name = procRam.Where(m => m.StartDate == procRam.Min(m => m.StartDate)).First().Name,
+                        StartDate = procRam.Min(m => m.StartDate)
+                    });
+                    procRam.Where(m => m.StartDate == procRam.Min(m => m.StartDate)).First().Name = procName;
+                    procRam.Where(m => m.StartDate == procRam.Min(m => m.StartDate)).First().StartDate = DateTime.Now;
+                }
+                else
+                {
+                    procVirtual.Where(m => m.Name == procName.Trim().ToUpper()).First().Name = procRam.Where(m => m.StartDate == procRam.Min(m => m.StartDate)).First().Name;
+                    procVirtual.Where(m => m.Name == procName.Trim().ToUpper()).First().StartDate = procRam.Where(m => m.StartDate == procRam.Min(m => m.StartDate)).First().StartDate;
+                    procRam.Where(m => m.StartDate == procRam.Min(m => m.StartDate)).First().Name = procName;
+                    procRam.Where(m => m.StartDate == procRam.Min(m => m.StartDate)).First().StartDate = DateTime.Now;
+                }
+            }
+
         }
         procName = "";
     }
