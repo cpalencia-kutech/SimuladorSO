@@ -25,7 +25,19 @@
             </div>
         </div>
     </div>
-    <div class="col-6"></div>
+    <div class="col-6">
+        <div class="table-responsive">
+            <h3>Resumen</h3>
+            <table class="table table-borderless table-hover table-striped">
+                <tbody>
+                    <tr>
+                        <td>Contador</td>
+                        <td>@currentCount</td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
 </div>
 <br />
 <div class="row">
@@ -123,7 +135,7 @@
     {
         currentCount++;
         //if (currentCount==maxCount)
-        if ((currentCount % pagRam) == 0)
+        if (currentCount == pagRam)
         {
             procRam.ForEach(m => m.State =0);
             currentCount=0;
